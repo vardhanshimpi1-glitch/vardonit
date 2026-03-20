@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Feed — Vardonit</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+ 
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-logo">
+      <div class="logo-icon">✍️</div>
+      <h1>V<span>ARDONIT</span></h1>
+    </div>
+    <div class="topbar-right">
+      Welcome, Visitor! &nbsp;|&nbsp; <a href="index.html">Create Post</a>
+    </div>
+  </div>
+ 
+  <!-- NAVBAR -->
+  <div class="navbar">
+    <a href="index.html">Post</a>
+    <a href="post.html">Feed</a>
+    <a href="help.html">Help</a>
+    <a href="about.html">About</a>
+  </div>
+ 
+  <!-- MAIN -->
+  <div class="main-wrapper">
+ 
+    <!-- FEED -->
+    <div class="main-content">
+      <div class="container">
+        <div class="container-header">
+          <h2>Recent Posts</h2>
+          <span class="post-count-badge" id="postCount">0 posts</span>
+        </div>
+        <div class="container-body">
+          <div id="posts">
+            <div class="loading">Loading posts...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+ 
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-box">
+        <div class="sidebar-box-title">📌 Navigation</div>
+        <div class="sidebar-box-content">
+          <a href="index.html">✏️ Create Post</a>
+          <a href="post.html">📰 View Feed</a>
+        </div>
+      </div>
+      <div class="sidebar-box">
+        <div class="sidebar-box-title">📊 Stats</div>
+        <div class="sidebar-box-content" id="statsBox">
+          Loading...
+        </div>
+      </div>
+      <div class="sidebar-box">
+        <div class="sidebar-box-title">ℹ️ About</div>
+        <div class="sidebar-box-content">
+          Vardonit — share your thoughts. Inspired by Zuckonit.
+        </div>
+      </div>
+    </div>
+ 
+  </div>
+ 
+  <!-- FOOTER -->
+  <div class="footer">
+    <a href="#">Terms of Service</a>
+    <a href="#">Privacy Policy</a>
+    <a href="#">About</a>
+    <a href="#">Browse Posts</a>
+  </div>
+ 
+  <script>
+    // Track liked posts in this session
+    const likedPosts = new Set(JSON.parse(localStorage.getItem('likedPosts') || '[]'));
+ 
+    function saveLikedPosts() {
+      localStorage.setItem('likedPosts', JSON.stringify([...likedPosts]));
+    }
+ 
+    async function loadPosts() {
+      try {
+        const res = await fetch('/posts');
+        const posts = await res.json();
+ 
+        const container = document.getElementById('posts');
+        const countBadge = document.getElementById('postCount');
+        const statsBox = document.getElementById('statsBox');
+ 
+        countBadge.textContent = posts.length + ' post' + (posts.length !== 1 ? 's' : '');
+ 
+        // Stats
+        const totalLikes = posts.reduce((sum, p) => sum + p.likes, 0);
+        statsBox.innerHTML = `
+          <div>Total posts: <b>${posts.length}</b></div>
+          <div>Total likes: <b>❤️ ${totalLikes}</b></div>
+        `;
+ 
+        if (posts.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">📭</div>
+              <p>No posts yet. Be the first!</p>
+              <a href="index.html">Create a post →</a>
+            </div>
+          `;
+          return;
+        }
+ 
+        container.innerHTML = '';
+ 
+        posts.forEach(post => {
+          const isLiked = likedPosts.has(String(post.id));
+          const div = document.createElement('div');
+          div.className = 'post-item';
+          div.id = 'post-' + post.id;
+ 
+          div.innerHTML = `
+            <div class="post-meta">
+              <span class="post-username">${escapeHtml(post.username)}</span>
+              <span class="post-dot">•</span>
+              <span class="post-time">${post.time}</span>
+            </div>
+            <div class="post-text">${escapeHtml(post.text)}</div>
+            <div class="post-actions">
+              <span class="like-count" id="likes-${post.id}">❤️ ${post.likes}</span>
+              <button class="action-btn ${isLiked ? 'liked' : ''}" id="likeBtn-${post.id}" onclick="likePost(${post.id})">
+                ${isLiked ? '❤️ Liked' : 'Like'}
+              </button>
+              <button class="action-btn delete-btn" onclick="deletePost(${post.id})">Delete</button>
+            </div>
+          `;
+ 
+          container.appendChild(div);
+        });
+ 
+      } catch (err) {
+        document.getElementById('posts').innerHTML = `
+          <div class="alert alert-error">Failed to load posts. Make sure the server is running.</div>
+        `;
+      }
+    }
+ 
+    async function likePost(id) {
+      const btn = document.getElementById('likeBtn-' + id);
+      if (likedPosts.has(String(id))) return; // already liked
+ 
+      try {
+        const res = await fetch('/posts/' + id + '/like', { method: 'POST' });
+        const post = await res.json();
+ 
+        likedPosts.add(String(id));
+        saveLikedPosts();
+ 
+        document.getElementById('likes-' + id).textContent = '❤️ ' + post.likes;
+        btn.textContent = '❤️ Liked';
+        btn.classList.add('liked');
+      } catch {
+        alert('Could not like post. Server error.');
+      }
+    }
+ 
+    async function deletePost(id) {
+      if (!confirm('Delete this post?')) return;
+ 
+      try {
+        await fetch('/posts/' + id, { method: 'DELETE' });
+        likedPosts.delete(String(id));
+        saveLikedPosts();
+        loadPosts();
+      } catch {
+        alert('Could not delete post. Server error.');
+      }
+    }
+ 
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.appendChild(document.createTextNode(str));
+      return div.innerHTML;
+    }
+ 
+    loadPosts();
+  </script>
+ 
+</body>
+</html>
+ 

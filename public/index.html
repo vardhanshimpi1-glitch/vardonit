@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vardonit — Post</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+ 
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-logo">
+      <div class="logo-icon">✍️</div>
+      <h1>V<span>ARDONIT</span></h1>
+    </div>
+    <div class="topbar-right">
+      Welcome, Visitor! &nbsp;|&nbsp; <a href="post.html">View Feed</a>
+    </div>
+  </div>
+ 
+  <!-- NAVBAR -->
+  <div class="navbar">
+    <a href="index.html">Post</a>
+    <a href="post.html">Feed</a>
+    <a href="help.html">Help</a>
+    <a href="about.html">About</a>
+  </div>
+ 
+  <!-- MAIN -->
+  <div class="main-wrapper">
+ 
+    <!-- LEFT: POST FORM -->
+    <div class="main-content">
+      <div class="container">
+        <div class="container-header">
+          <h2>Post to <em>Vardonit</em></h2>
+        </div>
+        <div class="container-body">
+ 
+          <div id="alertBox"></div>
+ 
+          <div class="form-group">
+            <label>Your Name</label>
+            <input type="text" id="username" placeholder="Enter your name" maxlength="50" autocomplete="off">
+          </div>
+ 
+          <div class="form-group">
+            <label>Your Thought</label>
+            <div class="toolbar">
+              <div class="toolbar-left">
+                <button class="toolbar-btn" title="Bold" onclick="wrapText('**','**')"><b>B</b></button>
+                <button class="toolbar-btn" title="Italic" onclick="wrapText('_','_')"><i>I</i></button>
+                <button class="toolbar-btn" title="Quote" onclick="wrapText('&quot;','&quot;')">❝</button>
+              </div>
+              <button class="post-btn" onclick="createPost()">
+                <span class="btn-icon">✈️</span> Post
+              </button>
+            </div>
+            <textarea id="postInput"
+              placeholder="What's on your mind?"
+              onkeydown="handleEnter(event)"
+              oninput="updateCounter()"
+              maxlength="500"></textarea>
+            <div class="char-counter" id="charCounter">500 characters remaining</div>
+          </div>
+ 
+        </div>
+      </div>
+    </div>
+ 
+    <!-- RIGHT: SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-box">
+        <div class="sidebar-box-title">📌 Navigation</div>
+        <div class="sidebar-box-content">
+          <a href="index.html">✏️ Create Post</a>
+          <a href="post.html">📰 View Feed</a>
+        </div>
+      </div>
+      <div class="sidebar-box">
+        <div class="sidebar-box-title">ℹ️ About Vardonit</div>
+        <div class="sidebar-box-content">
+          Share your thoughts with the world. Inspired by Zuckonit — the original mini-blog.
+        </div>
+      </div>
+    </div>
+ 
+  </div>
+ 
+  <!-- FOOTER -->
+  <div class="footer">
+    <a href="#">Terms of Service</a>
+    <a href="#">Privacy Policy</a>
+    <a href="#">About</a>
+    <a href="#">Browse Posts</a>
+  </div>
+ 
+  <script src="script.js"></script>
+</body>
+</html>
+ 
