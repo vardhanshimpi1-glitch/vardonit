@@ -56,6 +56,13 @@ async function createPost() {
  
     if (!res.ok) throw new Error('Server error');
  
+    // Save username so user can delete their own posts later
+    const myNames = JSON.parse(localStorage.getItem('myNames') || '[]');
+    if (!myNames.includes(username)) {
+      myNames.push(username);
+      localStorage.setItem('myNames', JSON.stringify(myNames));
+    }
+ 
     window.location.href = 'success.html';
  
   } catch {
