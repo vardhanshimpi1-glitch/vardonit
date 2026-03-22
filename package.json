@@ -1,7 +1,7 @@
 {
   "name": "vardonit",
   "version": "1.0.0",
-  "description": "",
+  "description": "\"# vardonit\" \r \"# vardonit\"",
   "main": "script.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -13,5 +13,14 @@
   "type": "commonjs",
   "dependencies": {
     "express": "^5.2.1"
-  }
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vardhanshimpi1-glitch/vardonit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/vardhanshimpi1-glitch/vardonit/issues"
+  },
+  "homepage": "https://github.com/vardhanshimpi1-glitch/vardonit#readme"
 }
