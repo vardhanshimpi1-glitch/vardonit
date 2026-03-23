@@ -1,26 +1,13 @@
 {
   "name": "vardonit",
   "version": "1.0.0",
-  "description": "\"# vardonit\" \r \"# vardonit\"",
-  "main": "script.js",
+  "description": "Vardonit — A mini social posting platform",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
-    "express": "^5.2.1"
-  },
-  "devDependencies": {},
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/vardhanshimpi1-glitch/vardonit.git"
-  },
-  "bugs": {
-    "url": "https://github.com/vardhanshimpi1-glitch/vardonit/issues"
-  },
-  "homepage": "https://github.com/vardhanshimpi1-glitch/vardonit#readme"
+    "express": "^4.18.2",
+    "mongodb": "^6.3.0"
+  }
 }

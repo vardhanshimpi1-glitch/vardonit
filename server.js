@@ -1,42 +1,38 @@
 const express = require("express");
-const fs = require("fs");
 const path = require("path");
+const { MongoClient, ObjectId } = require("mongodb");
  
 const app = express();
 const PORT = process.env.PORT || 3000;
+const MONGO_URL = process.env.MONGO_URL;
  
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
  
-const FILE = path.join(__dirname, "posts.json");
+let db;
  
-// ===== HELPERS =====
- 
-function getPosts() {
-  try {
-    if (!fs.existsSync(FILE)) {
-      fs.writeFileSync(FILE, "[]");
-    }
-    const data = fs.readFileSync(FILE, "utf-8").trim();
-    return data ? JSON.parse(data) : [];
-  } catch {
-    return [];
-  }
-}
- 
-function savePosts(posts) {
-  fs.writeFileSync(FILE, JSON.stringify(posts, null, 2));
+// ===== CONNECT TO MONGODB =====
+async function connectDB() {
+  const client = new MongoClient(MONGO_URL);
+  await client.connect();
+  db = client.db("vardonit");
+  console.log("✅ Connected to MongoDB");
 }
  
 // ===== ROUTES =====
  
-// GET all posts
-app.get("/posts", (req, res) => {
-  res.json(getPosts());
+// GET all posts — newest first
+app.get("/posts", async (req, res) => {
+  try {
+    const posts = await db.collection("posts").find().sort({ id: -1 }).toArray();
+    res.json(posts);
+  } catch {
+    res.status(500).json({ error: "Could not load posts." });
+  }
 });
  
 // POST create new post
-app.post("/posts", (req, res) => {
+app.post("/posts", async (req, res) => {
   const { username, text } = req.body;
  
   if (!username || !text) {
@@ -46,8 +42,6 @@ app.post("/posts", (req, res) => {
   if (username.length > 50 || text.length > 500) {
     return res.status(400).json({ error: "Input too long." });
   }
- 
-  const posts = getPosts();
  
   const newPost = {
     id: Date.now(),
@@ -61,42 +55,51 @@ app.post("/posts", (req, res) => {
     likes: 0
   };
  
-  posts.unshift(newPost);
-  savePosts(posts);
- 
-  res.json(newPost);
+  try {
+    await db.collection("posts").insertOne(newPost);
+    res.json(newPost);
+  } catch {
+    res.status(500).json({ error: "Could not save post." });
+  }
 });
  
 // POST like a post
-app.post("/posts/:id/like", (req, res) => {
-  const posts = getPosts();
-  const post = posts.find(p => p.id == req.params.id);
- 
-  if (!post) {
-    return res.status(404).json({ error: "Post not found." });
+app.post("/posts/:id/like", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const post = await db.collection("posts").findOneAndUpdate(
+      { id },
+      { $inc: { likes: 1 } },
+      { returnDocument: "after" }
+    );
+    if (!post) return res.status(404).json({ error: "Post not found." });
+    res.json(post);
+  } catch {
+    res.status(500).json({ error: "Could not like post." });
   }
- 
-  post.likes++;
-  savePosts(posts);
-  res.json(post);
 });
  
 // DELETE a post
-app.delete("/posts/:id", (req, res) => {
-  let posts = getPosts();
-  const exists = posts.some(p => p.id == req.params.id);
- 
-  if (!exists) {
-    return res.status(404).json({ error: "Post not found." });
+app.delete("/posts/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const result = await db.collection("posts").deleteOne({ id });
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: "Post not found." });
+    }
+    res.json({ success: true });
+  } catch {
+    res.status(500).json({ error: "Could not delete post." });
   }
- 
-  posts = posts.filter(p => p.id != req.params.id);
-  savePosts(posts);
-  res.json({ success: true });
 });
  
 // ===== START =====
-app.listen(PORT, () => {
-  console.log(`✅ Vardonit is running at http://localhost:${PORT}`);
+connectDB().then(() => {
+  app.listen(PORT, () => {
+    console.log(`✅ Vardonit is running at http://localhost:${PORT}`);
+  });
+}).catch(err => {
+  console.error("❌ MongoDB connection failed:", err);
+  process.exit(1);
 });
  
