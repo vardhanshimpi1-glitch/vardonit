@@ -79,6 +79,22 @@ app.post("/posts/:id/like", async (req, res) => {
   }
 });
  
+// POST unlike a post
+app.post("/posts/:id/unlike", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const post = await db.collection("posts").findOneAndUpdate(
+      { id, likes: { $gt: 0 } },
+      { $inc: { likes: -1 } },
+      { returnDocument: "after" }
+    );
+    if (!post) return res.status(404).json({ error: "Post not found." });
+    res.json(post);
+  } catch {
+    res.status(500).json({ error: "Could not unlike post." });
+  }
+});
+ 
 // DELETE a post
 app.delete("/posts/:id", async (req, res) => {
   try {

@@ -140,8 +140,8 @@
             <div class="post-text">${escapeHtml(post.text)}</div>
             <div class="post-actions">
               <span class="like-count" id="likes-${post.id}">❤️ ${post.likes}</span>
-              <button class="action-btn ${isLiked ? 'liked' : ''}" id="likeBtn-${post.id}" onclick="likePost(${post.id})">
-                ${isLiked ? '❤️ Liked' : 'Like'}
+              <button class="action-btn ${isLiked ? 'liked' : ''}" id="likeBtn-${post.id}" onclick="toggleLike(${post.id})">
+                ${isLiked ? '❤️ Unlike' : 'Like'}
               </button>
               ${canDelete ? `<button class="action-btn delete-btn" onclick="deletePost(${post.id})">Delete</button>` : ''}
             </div>
@@ -157,22 +157,29 @@
       }
     }
  
-    async function likePost(id) {
+    async function toggleLike(id) {
       const btn = document.getElementById('likeBtn-' + id);
-      if (likedPosts.has(String(id))) return;
+      const isLiked = likedPosts.has(String(id));
  
       try {
-        const res = await fetch('/posts/' + id + '/like', { method: 'POST' });
+        const endpoint = isLiked ? '/posts/' + id + '/unlike' : '/posts/' + id + '/like';
+        const res = await fetch(endpoint, { method: 'POST' });
         const post = await res.json();
  
-        likedPosts.add(String(id));
-        saveLikedPosts();
+        if (isLiked) {
+          likedPosts.delete(String(id));
+          btn.textContent = 'Like';
+          btn.classList.remove('liked');
+        } else {
+          likedPosts.add(String(id));
+          btn.textContent = '❤️ Unlike';
+          btn.classList.add('liked');
+        }
  
+        saveLikedPosts();
         document.getElementById('likes-' + id).textContent = '❤️ ' + post.likes;
-        btn.textContent = '❤️ Liked';
-        btn.classList.add('liked');
       } catch {
-        alert('Could not like post. Server error.');
+        alert('Could not update like. Server error.');
       }
     }
  
@@ -200,3 +207,4 @@
  
 </body>
 </html>
+ 
