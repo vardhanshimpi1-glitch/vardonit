@@ -427,6 +427,126 @@ body {
   text-decoration: underline;
 }
  
+/* ===== REPLIES ===== */
+.replies-section {
+  margin-top: 8px;
+  padding-left: 14px;
+  border-left: 2px solid #dce3f5;
+}
+ 
+.reply-item {
+  padding: 7px 0;
+  border-bottom: 1px solid #eee;
+}
+ 
+.reply-item:last-child {
+  border-bottom: none;
+}
+ 
+.reply-meta {
+  font-size: 11px;
+  color: #666;
+  margin-bottom: 3px;
+}
+ 
+.reply-username {
+  font-weight: bold;
+  color: #3b5998;
+}
+ 
+.reply-text {
+  font-size: 13px;
+  color: #222;
+  line-height: 1.5;
+  margin-bottom: 5px;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+ 
+.reply-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+ 
+.reply-like-count {
+  color: #cc0000;
+  font-weight: bold;
+  font-size: 12px;
+}
+ 
+.reply-form {
+  margin-top: 8px;
+  display: none;
+}
+ 
+.reply-form.open {
+  display: block;
+}
+ 
+.reply-form input {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid #c0c0c0;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  margin-bottom: 5px;
+  box-sizing: border-box;
+  outline: none;
+}
+ 
+.reply-form input:focus {
+  border-color: #3b5998;
+}
+ 
+.reply-form textarea {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid #c0c0c0;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  resize: vertical;
+  min-height: 55px;
+  margin-bottom: 5px;
+  box-sizing: border-box;
+  outline: none;
+  line-height: 1.4;
+}
+ 
+.reply-form textarea:focus {
+  border-color: #3b5998;
+}
+ 
+.reply-submit-btn {
+  background: #3b5998;
+  border: 1px solid #2a4080;
+  color: white;
+  padding: 3px 12px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: bold;
+  font-family: Arial, sans-serif;
+}
+ 
+.reply-submit-btn:hover {
+  background: #2a4080;
+}
+ 
+.reply-toggle-btn {
+  background: white;
+  border: 1px solid #aaa;
+  color: #3b5998;
+  padding: 2px 9px;
+  cursor: pointer;
+  font-size: 11px;
+  font-family: Arial, sans-serif;
+}
+ 
+.reply-toggle-btn:hover {
+  background: #dce3f5;
+}
+ 
 /* ===== RESPONSIVE — TABLET (max 700px) ===== */
 @media (max-width: 700px) {
   .main-wrapper {

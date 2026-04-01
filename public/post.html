@@ -79,18 +79,52 @@
   </div>
  
   <script>
-    // Track liked posts in this session
     const likedPosts = new Set(JSON.parse(localStorage.getItem('likedPosts') || '[]'));
- 
-    // Names this user has posted under
+    const likedReplies = new Set(JSON.parse(localStorage.getItem('likedReplies') || '[]'));
     const myNames = JSON.parse(localStorage.getItem('myNames') || '[]');
  
     function saveLikedPosts() {
       localStorage.setItem('likedPosts', JSON.stringify([...likedPosts]));
     }
  
-    function isMyPost(username) {
+    function saveLikedReplies() {
+      localStorage.setItem('likedReplies', JSON.stringify([...likedReplies]));
+    }
+ 
+    function isMyName(username) {
       return myNames.map(n => n.trim().toLowerCase()).includes(username.trim().toLowerCase());
+    }
+ 
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.appendChild(document.createTextNode(str));
+      return div.innerHTML;
+    }
+ 
+    function buildRepliesHtml(postId, replies) {
+      if (!replies || replies.length === 0) return '';
+      return replies.map(reply => {
+        const rKey = postId + '-' + reply.replyId;
+        const isLiked = likedReplies.has(rKey);
+        const canDelete = isMyName(reply.username);
+        return `
+          <div class="reply-item" id="reply-${reply.replyId}">
+            <div class="reply-meta">
+              <span class="reply-username">${escapeHtml(reply.username)}</span>
+              <span class="post-dot">•</span>
+              <span class="post-time">${reply.time}</span>
+            </div>
+            <div class="reply-text">${escapeHtml(reply.text)}</div>
+            <div class="reply-actions">
+              <span class="reply-like-count" id="rlikes-${reply.replyId}">❤️ ${reply.likes}</span>
+              <button class="action-btn ${isLiked ? 'liked' : ''}" id="rlikeBtn-${reply.replyId}" onclick="toggleReplyLike(${postId}, ${reply.replyId})">
+                ${isLiked ? '❤️ Unlike' : 'Like'}
+              </button>
+              ${canDelete ? `<button class="action-btn delete-btn" onclick="deleteReply(${postId}, ${reply.replyId})">Delete</button>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
     }
  
     async function loadPosts() {
@@ -104,7 +138,6 @@
  
         countBadge.textContent = posts.length + ' post' + (posts.length !== 1 ? 's' : '');
  
-        // Stats
         const totalLikes = posts.reduce((sum, p) => sum + p.likes, 0);
         statsBox.innerHTML = `
           <div>Total posts: <b>${posts.length}</b></div>
@@ -126,7 +159,8 @@
  
         posts.forEach(post => {
           const isLiked = likedPosts.has(String(post.id));
-          const canDelete = isMyPost(post.username);
+          const canDelete = isMyName(post.username);
+          const replies = post.replies || [];
           const div = document.createElement('div');
           div.className = 'post-item';
           div.id = 'post-' + post.id;
@@ -143,7 +177,17 @@
               <button class="action-btn ${isLiked ? 'liked' : ''}" id="likeBtn-${post.id}" onclick="toggleLike(${post.id})">
                 ${isLiked ? '❤️ Unlike' : 'Like'}
               </button>
+              <button class="reply-toggle-btn" onclick="toggleReplyForm(${post.id})">💬 Reply${replies.length > 0 ? ' (' + replies.length + ')' : ''}</button>
               ${canDelete ? `<button class="action-btn delete-btn" onclick="deletePost(${post.id})">Delete</button>` : ''}
+            </div>
+ 
+            <div class="replies-section" id="repliesSection-${post.id}">
+              <div id="repliesList-${post.id}">${buildRepliesHtml(post.id, replies)}</div>
+              <div class="reply-form" id="replyForm-${post.id}">
+                <input type="text" id="replyName-${post.id}" placeholder="Your name" maxlength="50">
+                <textarea id="replyText-${post.id}" placeholder="Write a reply..." maxlength="300"></textarea>
+                <button class="reply-submit-btn" onclick="submitReply(${post.id})">Post Reply</button>
+              </div>
             </div>
           `;
  
@@ -154,6 +198,51 @@
         document.getElementById('posts').innerHTML = `
           <div class="alert alert-error">Failed to load posts. Make sure the server is running.</div>
         `;
+      }
+    }
+ 
+    function toggleReplyForm(postId) {
+      const form = document.getElementById('replyForm-' + postId);
+      form.classList.toggle('open');
+      if (form.classList.contains('open')) {
+        // Pre-fill name if known
+        const nameInput = document.getElementById('replyName-' + postId);
+        if (myNames.length > 0 && !nameInput.value) {
+          nameInput.value = myNames[myNames.length - 1];
+        }
+        document.getElementById('replyText-' + postId).focus();
+      }
+    }
+ 
+    async function submitReply(postId) {
+      const username = document.getElementById('replyName-' + postId).value.trim();
+      const text = document.getElementById('replyText-' + postId).value.trim();
+ 
+      if (!username || !text) {
+        alert('Please fill in your name and reply.');
+        return;
+      }
+ 
+      try {
+        const res = await fetch('/posts/' + postId + '/replies', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, text })
+        });
+ 
+        if (!res.ok) throw new Error('Server error');
+ 
+        // Save name to localStorage
+        const myNames = JSON.parse(localStorage.getItem('myNames') || '[]');
+        if (!myNames.includes(username)) {
+          myNames.push(username);
+          localStorage.setItem('myNames', JSON.stringify(myNames));
+        }
+ 
+        document.getElementById('replyText-' + postId).value = '';
+        loadPosts();
+      } catch {
+        alert('Could not post reply. Server error.');
       }
     }
  
@@ -183,9 +272,37 @@
       }
     }
  
+    async function toggleReplyLike(postId, replyId) {
+      const rKey = postId + '-' + replyId;
+      const btn = document.getElementById('rlikeBtn-' + replyId);
+      const isLiked = likedReplies.has(rKey);
+ 
+      try {
+        const endpoint = isLiked
+          ? '/posts/' + postId + '/replies/' + replyId + '/unlike'
+          : '/posts/' + postId + '/replies/' + replyId + '/like';
+        const res = await fetch(endpoint, { method: 'POST' });
+        const reply = await res.json();
+ 
+        if (isLiked) {
+          likedReplies.delete(rKey);
+          btn.textContent = 'Like';
+          btn.classList.remove('liked');
+        } else {
+          likedReplies.add(rKey);
+          btn.textContent = '❤️ Unlike';
+          btn.classList.add('liked');
+        }
+ 
+        saveLikedReplies();
+        document.getElementById('rlikes-' + replyId).textContent = '❤️ ' + reply.likes;
+      } catch {
+        alert('Could not update like. Server error.');
+      }
+    }
+ 
     async function deletePost(id) {
       if (!confirm('Delete this post?')) return;
- 
       try {
         await fetch('/posts/' + id, { method: 'DELETE' });
         likedPosts.delete(String(id));
@@ -196,10 +313,17 @@
       }
     }
  
-    function escapeHtml(str) {
-      const div = document.createElement('div');
-      div.appendChild(document.createTextNode(str));
-      return div.innerHTML;
+    async function deleteReply(postId, replyId) {
+      if (!confirm('Delete this reply?')) return;
+      try {
+        await fetch('/posts/' + postId + '/replies/' + replyId, { method: 'DELETE' });
+        const rKey = postId + '-' + replyId;
+        likedReplies.delete(rKey);
+        saveLikedReplies();
+        loadPosts();
+      } catch {
+        alert('Could not delete reply. Server error.');
+      }
     }
  
     loadPosts();
